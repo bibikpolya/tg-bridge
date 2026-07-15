@@ -1,17 +1,17 @@
 <?php
-// Получаем метод API из пути (например, /botTOKEN/getMe)
+// Берем путь запроса, например /bot12345:AAAAAA/getMe
 $uri = $_SERVER['REQUEST_URI'];
 
-// Убираем лишние слэши и гейты, если они есть
+// Убираем лишние слэши в начале
 $cleanPath = ltrim($uri, '/');
 
 if (empty($cleanPath)) {
-    header("HTTP/1.1 400 Bad Request");
-    echo json_encode(["ok" => false, "description" => "No Telegram method specified"]);
+    header("HTTP/1.1 200 OK");
+    echo json_encode(["ok" => true, "status" => "Telegram Bridge is running!"]);
     exit;
 }
 
-// Перенаправляем всё на официальный Telegram API
+// Перенаправляем реальный запрос на Telegram
 $telegramUrl = "https://api.telegram.org/" . $cleanPath;
 
 $input = file_get_contents('php://input');
@@ -20,12 +20,11 @@ $ch = curl_init($telegramUrl);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_HEADER, false);
 
-// Если был POST-запрос, проксируем его тело
+// Проксируем POST-данные
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $input);
     
-    // Передаем правильные заголовки типа контента
     if (isset($_SERVER['CONTENT_TYPE'])) {
         curl_setopt($ch, CURLOPT_HTTPHEADER, ["Content-Type: " . $_SERVER['CONTENT_TYPE']]);
     }
